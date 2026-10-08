@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@apollo/client/react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -241,11 +242,11 @@ export function WorkoutDetailsScreen({
             navigation.goBack()
           }
         >
-          <Text
-            style={styles.backIcon}
-          >
-            ‹
-          </Text>
+          <Ionicons
+            name="chevron-back"
+            size={26}
+            color="#146EF5"
+          />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
@@ -358,18 +359,12 @@ export function WorkoutDetailsScreen({
                   }
                   activeOpacity={0.7}
                 >
-                  <View
-                    style={
-                      styles.exerciseIconCircle
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.exerciseIcon
-                      }
-                    >
-                      🏋️
-                    </Text>
+                  <View style={styles.exerciseIconCircle}>
+                    <Ionicons
+                      name="barbell"
+                      size={20}
+                      color="#146EF5"
+                    />
                   </View>
 
                   <View
@@ -408,15 +403,11 @@ export function WorkoutDetailsScreen({
                     </Text>
                   </View>
 
-                  <Text
-                    style={
-                      styles.exerciseArrow
-                    }
-                  >
-                    {expanded
-                      ? "⌃"
-                      : "›"}
-                  </Text>
+                  <Ionicons
+                    name={expanded ? "chevron-up" : "chevron-forward"}
+                    size={18}
+                    color="#7EAFFF"
+                  />
                 </TouchableOpacity>
 
                 {/* Expanded sets */}
@@ -433,53 +424,57 @@ export function WorkoutDetailsScreen({
                           a.setNumber -
                           b.setNumber
                       )
-                      .map((set) => (
-                        <View
-                          key={set.id}
-                          style={
-                            styles.setRow
-                          }
-                        >
-                          <Text
-                            style={
-                              styles.setNumber
-                            }
-                          >
-                            Set{" "}
-                            {
-                              set.setNumber
-                            }
-                          </Text>
-
-                          <View
-                            style={
-                              styles.setValue
-                            }
-                          >
-                            <Text
-                              style={
-                                styles.setValueText
-                              }
+                      .length === 0 ? (
+                        <Text style={styles.noSetsText}>
+                          No sets recorded
+                        </Text>
+                      ) : (
+                        workoutExercise.sets
+                          .slice()
+                          .sort(
+                            (a, b) =>
+                              a.setNumber -
+                              b.setNumber
+                          )
+                          .map((set) => (
+                            <View
+                              key={set.id}
+                              style={styles.setRow}
                             >
-                              {set.reps} reps
-                            </Text>
-                          </View>
+                              <View
+                                style={[
+                                  styles.completedCircle,
+                                  set.completed &&
+                                    styles.completedCircleActive,
+                                ]}
+                              >
+                                {set.completed && (
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={13}
+                                    color="#FFFFFF"
+                                  />
+                                )}
+                              </View>
 
-                          <View
-                            style={
-                              styles.setValue
-                            }
-                          >
-                            <Text
-                              style={
-                                styles.setValueText
-                              }
-                            >
-                              {set.weight} kg
-                            </Text>
-                          </View>
-                        </View>
-                      ))}
+                              <Text style={styles.setNumber}>
+                                Set {set.setNumber}
+                              </Text>
+
+                              <View style={styles.setValue}>
+                                <Text style={styles.setValueText}>
+                                  {set.reps} reps
+                                </Text>
+                              </View>
+
+                              <View style={styles.setValue}>
+                                <Text style={styles.setValueText}>
+                                  {set.weight} kg
+                                </Text>
+                              </View>
+                            </View>
+                          ))
+                      )}
                   </View>
                 )}
               </View>
@@ -616,7 +611,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     marginBottom: 7,
-    overflow: "hidden",
   },
 
   expandedExerciseContainer: {
@@ -672,34 +666,69 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingTop: 4,
     paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E4EAF2",
   },
 
   setRow: {
-    minHeight: 36,
+    minHeight: 40,
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 8,
+    paddingVertical: 2,
   },
 
-  setNumber: {
-    width: 48,
-    fontSize: 11,
-    color: "#667085",
-  },
-
-  setValue: {
-    flex: 1,
-    height: 30,
-    borderRadius: 5,
-    backgroundColor: "#FFFFFF",
+  completedCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: "#D0D5DD",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  setValueText: {
-    fontSize: 10,
-    color: "#344054",
+  completedCircleActive: {
+    backgroundColor: "#12B76A",
+    borderColor: "#12B76A",
+  },
+
+  completedCheckmark: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    lineHeight: 14,
+  },
+
+  setNumber: {
+    width: 46,
+    fontSize: 11,
+    color: "#667085",
     fontWeight: "500",
+  },
+
+  setValue: {
+    flex: 1,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+
+  setValueText: {
+    fontSize: 11,
+    color: "#146EF5",
+    fontWeight: "600",
+  },
+
+  noSetsText: {
+    fontSize: 11,
+    color: "#9DAFCB",
+    fontStyle: "italic",
+    paddingVertical: 8,
+    textAlign: "center",
   },
 
   centerContainer: {

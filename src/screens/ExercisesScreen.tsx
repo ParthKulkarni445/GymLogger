@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@apollo/client/react";
 
 import {
@@ -51,6 +52,8 @@ const FILTERS = [
   "Back",
   "Legs",
   "Shoulders",
+  "Biceps",
+  "Triceps"
 ];
 
 export function ExercisesScreen() {
@@ -132,11 +135,11 @@ export function ExercisesScreen() {
             styles.exerciseIconCircle
           }
         >
-          <Text
-            style={styles.exerciseIcon}
-          >
-            🏋️
-          </Text>
+          <Ionicons
+            name="barbell"
+            size={20}
+            color="#146EF5"
+          />
         </View>
 
         <View style={styles.exerciseInfo}>
@@ -154,11 +157,11 @@ export function ExercisesScreen() {
           </Text>
         </View>
 
-        <Text
-          style={styles.exerciseArrow}
-        >
-          ›
-        </Text>
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color="#98A2B3"
+        />
       </TouchableOpacity>
     );
   };
@@ -179,11 +182,11 @@ export function ExercisesScreen() {
             handleCreateExercise
           }
         >
-          <Text
-            style={styles.addButtonText}
-          >
-            +
-          </Text>
+          <Ionicons
+            name="add"
+            size={20}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
       </View>
 
@@ -193,11 +196,12 @@ export function ExercisesScreen() {
           styles.searchContainer
         }
       >
-        <Text
+        <Ionicons
+          name="search"
+          size={18}
+          color="#98A2B3"
           style={styles.searchIcon}
-        >
-          🔍
-        </Text>
+        />
 
         <TextInput
           value={search}

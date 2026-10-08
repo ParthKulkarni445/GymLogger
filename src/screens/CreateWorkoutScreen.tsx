@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useNavigation } from "@react-navigation/native";
 
@@ -94,7 +95,7 @@ export function CreateWorkoutScreen() {
             onPress={() => navigation.goBack()}
             style={styles.closeButton}
           >
-            <Text style={styles.closeText}>×</Text>
+            <Ionicons name="close" size={24} color="#101828" />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Create Workout</Text>
@@ -119,7 +120,7 @@ export function CreateWorkoutScreen() {
           <View style={styles.timeInput}>
             <Text style={styles.timeText}>Now</Text>
 
-            <Text style={styles.chevron}>⌄</Text>
+            <Ionicons name="chevron-down" size={18} color="#667085" />
           </View>
         </View>
 

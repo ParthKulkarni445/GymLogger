@@ -8,6 +8,7 @@ import {
 import {
   SafeAreaView,
 } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   useNavigation,
@@ -62,11 +63,11 @@ export function WorkoutFinishedScreen() {
         <View
           style={styles.successCircle}
         >
-          <Text
-            style={styles.checkmark}
-          >
-            ✓
-          </Text>
+          <Ionicons
+            name="checkmark"
+            size={42}
+            color="#12B76A"
+          />
         </View>
 
         <Text

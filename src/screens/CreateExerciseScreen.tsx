@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery } from "@apollo/client/react";
 
@@ -31,7 +32,7 @@ type Exercise = {
   targetMuscle: string | null;
 };
 
-const MUSCLE_OPTIONS = ["Chest", "Back", "Legs", "Shoulders"];
+const MUSCLE_OPTIONS = ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps"];
 
 export function CreateExerciseScreen({ navigation, route }: Props) {
   const exerciseId = route.params?.exerciseId;
@@ -158,7 +159,7 @@ export function CreateExerciseScreen({ navigation, route }: Props) {
               onPress={() => navigation.goBack()}
               disabled={saving}
             >
-              <Text style={styles.closeIcon}>×</Text>
+              <Ionicons name="close" size={24} color="#101828" />
             </TouchableOpacity>
 
             <Text style={styles.title}>
@@ -190,9 +191,11 @@ export function CreateExerciseScreen({ navigation, route }: Props) {
           >
             <Text style={styles.dropdownText}>{targetMuscle}</Text>
 
-            <Text style={styles.dropdownArrow}>
-              {showMuscleOptions ? "⌃" : "⌄"}
-            </Text>
+            <Ionicons
+              name={showMuscleOptions ? "chevron-up" : "chevron-down"}
+              size={18}
+              color="#667085"
+            />
           </TouchableOpacity>
 
           {/* Dropdown options */}

@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@apollo/client/react";
 
 import {
@@ -186,9 +187,11 @@ export function HistoryScreen() {
           </Text>
         </View>
 
-        <Text style={styles.arrow}>
-          ›
-        </Text>
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color="#98A2B3"
+        />
       </TouchableOpacity>
     );
   };

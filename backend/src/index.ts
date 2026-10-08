@@ -12,6 +12,13 @@ const schema = createSchema({
 const yoga = createYoga({
   schema,
   graphqlEndpoint: '/graphql',
+  plugins: [
+    {
+      onExecute({ args }: { args: any }) {
+        console.log(`[GraphQL] Received operation: ${args.operationName || 'unnamed'}`);
+      },
+    },
+  ],
 });
 
 const server = createServer(yoga);

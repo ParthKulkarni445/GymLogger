@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
+
 import {
   SafeAreaView,
 } from "react-native-safe-area-context";
@@ -38,6 +40,10 @@ import {
 import {
   COMPLETE_WORKOUT_MUTATION,
 } from "../graphql/mutations/completeWorkout";
+
+import {
+  ADD_SET_MUTATION,
+} from "../graphql/mutations/addSet";
 
 import type {
   RootStackParamList,
@@ -91,6 +97,9 @@ export function HomeScreen() {
   const [expandedExerciseId, setExpandedExerciseId] =
     useState<string | null>(null);
 
+  const [addingSetForExerciseId, setAddingSetForExerciseId] =
+    useState<string | null>(null);
+
   const {
     data: workoutsData,
     loading: workoutsLoading,
@@ -129,6 +138,10 @@ export function HomeScreen() {
     },
   ] = useMutation(
     COMPLETE_WORKOUT_MUTATION
+  );
+
+  const [addSet] = useMutation(
+    ADD_SET_MUTATION
   );
 
   useFocusEffect(
@@ -228,6 +241,35 @@ export function HomeScreen() {
         completed: set.completed,
       }
     );
+  };
+
+  const handleAddSet = async (
+    workoutExerciseId: string
+  ) => {
+    setAddingSetForExerciseId(
+      workoutExerciseId
+    );
+
+    try {
+      await addSet({
+        variables: {
+          input: {
+            workoutExerciseId,
+            reps: 0,
+            weight: 0,
+          },
+        },
+      });
+
+      await refetchWorkout();
+    } catch (error) {
+      console.error(
+        "Failed to add set:",
+        error
+      );
+    } finally {
+      setAddingSetForExerciseId(null);
+    }
   };
 
   const handleFinishWorkout =
@@ -335,11 +377,11 @@ export function HomeScreen() {
           <View
             style={styles.emptyIconCircle}
           >
-            <Text
-              style={styles.emptyIcon}
-            >
-              🏋️
-            </Text>
+            <Ionicons
+              name="barbell"
+              size={42}
+              color="#146EF5"
+            />
           </View>
 
           <Text
@@ -412,107 +454,52 @@ export function HomeScreen() {
           Home
         </Text>
 
-        {/* Workout heading */}
-        <View
-          style={styles.workoutHeader}
-        >
-          <View
-            style={styles.workoutHeaderTop}
-          >
-            <View
-              style={styles.workoutHeaderInfo}
-            >
-              <Text
-                style={styles.workoutName}
-              >
-                {workout.name}
-              </Text>
+        {/* Active Workout */}
+        <View style={styles.workoutHeader}>
+          <Text style={styles.workoutName}>
+            {workout.name}
+          </Text>
 
-              <View
-                style={styles.metaRow}
-              >
-                <View
-                  style={
-                    styles.activeDot
-                  }
-                />
+          <View style={styles.metaRow}>
+            <View style={styles.activeDot} />
 
-                <Text
-                  style={styles.metaText}
-                >
-                  Started{" "}
-                  {formatStartTime(
-                    workout.startedAt
-                  )}
-                  {" · "}
-                  Active
-                </Text>
-              </View>
-            </View>
-
-            <Text
-              style={styles.headerArrow}
-            >
-              ›
+            <Text style={styles.metaText}>
+              Started{" "}
+              {formatStartTime(workout.startedAt)}
+              {" · "}
+              Active
             </Text>
           </View>
         </View>
 
-        {/* Stats */}
-        <View
-          style={styles.statsRow}
-        >
-          <View
-            style={styles.statCard}
-          >
-            <Text
-              style={styles.statValue}
-            >
-              {workout.exercises.length}
-            </Text>
-
-            <Text
-              style={styles.statLabel}
-            >
+        {/* Stats - same layout as Workout Details */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>
               Exercises
             </Text>
+            <Text style={styles.statValue}>
+              {workout.exercises.length}
+            </Text>
+            
           </View>
 
-          <View
-            style={styles.statCard}
-          >
-            <Text
-              style={styles.statValue}
-            >
-              {totalSets}
-            </Text>
-
-            <Text
-              style={styles.statLabel}
-            >
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>
               Sets
             </Text>
+            <Text style={styles.statValue}>
+              {totalSets}
+            </Text>
+            
           </View>
 
-          <View
-            style={[
-              styles.statCard,
-              styles.volumeCard,
-            ]}
-          >
-            <Text
-              style={styles.volumeLabel}
-            >
+          <View style={[styles.statCard, styles.volumeCard]}>
+            <Text style={styles.volumeLabel}>
               Total Volume
             </Text>
-
-            <Text
-              style={styles.volumeValue}
-            >
-              {formatVolume(
-                totalVolume
-              )}{" "}
-              kg
+            <Text style={styles.volumeValue}>
+              {formatVolume(totalVolume)} kg
             </Text>
           </View>
         </View>
@@ -563,9 +550,7 @@ export function HomeScreen() {
         </TouchableOpacity>
 
         {/* Exercises */}
-        <Text
-          style={styles.sectionTitle}
-        >
+        <Text style={styles.sectionTitle}>
           Exercises
         </Text>
 
@@ -575,188 +560,168 @@ export function HomeScreen() {
             (a, b) =>
               a.position - b.position
           )
-          .map(
-            (workoutExercise) => {
-              const expanded =
-                expandedExerciseId ===
-                workoutExercise.id;
+          .map((workoutExercise) => {
+            const expanded =
+              expandedExerciseId ===
+              workoutExercise.id;
 
-              return (
-                <View
-                  key={
-                    workoutExercise.id
+            const sortedSets =
+              workoutExercise.sets
+                .slice()
+                .sort(
+                  (a, b) =>
+                    a.setNumber - b.setNumber
+                );
+
+            return (
+              <View
+                key={workoutExercise.id}
+                style={styles.exerciseCard}
+              >
+                {/* Exercise header */}
+                <TouchableOpacity
+                  style={styles.exerciseHeader}
+                  onPress={() =>
+                    setExpandedExerciseId(
+                      expanded
+                        ? null
+                        : workoutExercise.id
+                    )
                   }
-                  style={
-                    styles.exerciseCard
-                  }
+                  activeOpacity={0.7}
                 >
-                  {/* Exercise header */}
-                  <TouchableOpacity
-                    style={
-                      styles.exerciseHeader
-                    }
-                    onPress={() =>
-                      setExpandedExerciseId(
-                        expanded
-                          ? null
-                          : workoutExercise.id
-                      )
-                    }
-                  >
-                    <View
-                      style={
-                        styles.exerciseIconCircle
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.exerciseIcon
-                        }
-                      >
-                        🏋️
-                      </Text>
-                    </View>
+                  <View style={styles.exerciseIconCircle}>
+                  <Ionicons
+                    name="barbell"
+                    size={20}
+                    color="#146EF5"
+                  />
+                  </View>
 
-                    <View
-                      style={
-                        styles.exerciseInfo
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.exerciseName
-                        }
-                      >
-                        {
-                          workoutExercise
-                            .exercise
-                            .name
-                        }
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.exerciseSummary
-                        }
-                      >
-                        {
-                          workoutExercise
-                            .sets.length
-                        }{" "}
-                        sets ·{" "}
-                        {workoutExercise.sets
-                          .map(
-                            (set) =>
-                              set.reps
-                          )
-                          .join("/")}
-                        {" reps"}
-                      </Text>
-                    </View>
-
-                    <Text
-                      style={
-                        styles.exerciseArrow
-                      }
-                    >
-                      {expanded
-                        ? "⌃"
-                        : "›"}
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>
+                      {workoutExercise.exercise.name}
                     </Text>
-                  </TouchableOpacity>
 
-                  {/* Set rows */}
-                  {expanded &&
-                    workoutExercise.sets
-                      .slice()
-                      .sort(
-                        (a, b) =>
-                          a.setNumber -
-                          b.setNumber
-                      )
-                      .map((set) => (
+                    <Text style={styles.exerciseSummary}>
+                      {workoutExercise.sets.length} sets ·{" "}
+                      {workoutExercise.sets
+                        .map((set) => set.reps)
+                        .join("/")}
+                      {" reps"}
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name={expanded ? "chevron-up" : "chevron-forward"}
+                    size={18}
+                    color="#7EAFFF"
+                  />
+                </TouchableOpacity>
+
+                {/* Expanded sets */}
+                {expanded && (
+                  <View style={styles.setsContainer}>
+                    {sortedSets.length === 0 ? (
+                      <Text style={styles.noSetsText}>
+                        No sets added yet
+                      </Text>
+                    ) : (
+                      sortedSets.map((set) => (
                         <View
                           key={set.id}
-                          style={
-                            styles.setRow
-                          }
+                          style={styles.setRow}
                         >
-                          <Text
-                            style={
-                              styles.setLabel
-                            }
-                          >
-                            Set{" "}
-                            {
-                              set.setNumber
-                            }
-                          </Text>
-
                           <View
-                            style={
-                              styles.setValue
-                            }
+                            style={[
+                              styles.completedCircle,
+                              set.completed &&
+                                styles.completedCircleActive,
+                            ]}
                           >
-                            <Text
-                              style={
-                                styles.setValueText
-                              }
-                            >
-                              {set.weight} kg
-                            </Text>
+                            {set.completed && (
+                              <Ionicons
+                                name="checkmark"
+                                size={13}
+                                color="#FFFFFF"
+                              />
+                            )}
                           </View>
 
-                          <View
-                            style={
-                              styles.setValue
-                            }
-                          >
-                            <Text
-                              style={
-                                styles.setValueText
-                              }
-                            >
+                          <Text style={styles.setNumber}>
+                            Set {set.setNumber}
+                          </Text>
+
+                          <View style={styles.setValue}>
+                            <Text style={styles.setValueText}>
                               {set.reps} reps
                             </Text>
                           </View>
 
-                          <View
-                            style={[
-                              styles.completedDot,
-                              set.completed &&
-                                styles.completedDotActive,
-                            ]}
-                          />
+                          <View style={styles.setValue}>
+                            <Text style={styles.setValueText}>
+                              {set.weight} kg
+                            </Text>
+                          </View>
 
-                          {/* Pencil for EVERY set */}
                           <TouchableOpacity
-                            style={
-                              styles.editSetButton
-                            }
+                            style={styles.editSetButton}
                             onPress={() =>
                               handleEditSet(
                                 set,
-                                workoutExercise
-                                  .exercise
-                                  .name
+                                workoutExercise.exercise.name
                               )
                             }
                           >
-                            <Text
-                              style={
-                                styles.editSetIcon
-                              }
-                            >
-                              ✎
-                            </Text>
+                            <Ionicons
+                              name="pencil"
+                              size={13}
+                              color="#FFFFFF"
+                            />
                           </TouchableOpacity>
                         </View>
-                      ))}
-                </View>
-              );
-            }
-          )}
+                      ))
+                    )}
 
+                    {/* Add Set button */}
+                    <TouchableOpacity
+                      style={styles.addSetButton}
+                      onPress={() =>
+                        handleAddSet(
+                          workoutExercise.id
+                        )
+                      }
+                      disabled={
+                        addingSetForExerciseId ===
+                        workoutExercise.id
+                      }
+                    >
+                      {addingSetForExerciseId ===
+                      workoutExercise.id ? (
+                        <ActivityIndicator
+                          size="small"
+                          color="#146EF5"
+                        />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name="add"
+                            size={16}
+                            color="#146EF5"
+                          />
+                          <Text style={styles.addSetText}>
+                            Add Set
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            );
+          })
+
+        }
         <View
           style={styles.bottomSpacing}
         />
@@ -794,20 +759,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  workoutHeaderTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  workoutHeaderInfo: {
-    flex: 1,
-  },
-
   workoutName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
     color: "#102A68",
-    marginBottom: 5,
+    marginBottom: 6,
   },
 
   metaRow: {
@@ -820,28 +776,23 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#12B76A",
-    marginRight: 8,
+    marginRight: 9,
   },
 
   metaText: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#6B8FC5",
-  },
-
-  headerArrow: {
-    fontSize: 25,
-    color: "#7EAFFF",
   },
 
   statsRow: {
     flexDirection: "row",
     gap: 7,
-    marginBottom: 9,
+    marginBottom: 20,
   },
 
   statCard: {
     flex: 1,
-    height: 62,
+    minHeight: 58,
     borderRadius: 10,
     backgroundColor: "#F3F7FD",
     alignItems: "center",
@@ -853,27 +804,27 @@ const styles = StyleSheet.create({
   },
 
   statValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     color: "#102A68",
+    marginBottom: 3,
   },
 
   statLabel: {
-    fontSize: 9,
+    fontSize: 10,
     color: "#6B8FC5",
-    marginTop: 2,
   },
 
   volumeLabel: {
-    fontSize: 8,
+    fontSize: 9,
     color: "#6B8FC5",
+    marginBottom: 3,
   },
 
   volumeValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     color: "#102A68",
-    marginTop: 2,
   },
 
   addExerciseButton: {
@@ -884,7 +835,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F6FF",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 7,
+    marginBottom: 12,
   },
 
   addExerciseText: {
@@ -925,7 +876,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     marginBottom: 7,
-    overflow: "hidden",
   },
 
   exerciseHeader: {
@@ -969,64 +919,116 @@ const styles = StyleSheet.create({
   exerciseArrow: {
     fontSize: 22,
     color: "#7EAFFF",
+    marginLeft: 8,
+  },
+
+  setsContainer: {
+    backgroundColor: "#F4F8FD",
+    paddingHorizontal: 9,
+    paddingTop: 4,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E4EAF2",
   },
 
   setRow: {
-    minHeight: 39,
-    backgroundColor: "#F4F8FD",
-    borderTopWidth: 1,
-    borderTopColor: "#E4EAF2",
-    paddingHorizontal: 8,
+    minHeight: 40,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 8,
+    paddingVertical: 2,
   },
 
-  setLabel: {
-    width: 37,
-    fontSize: 9,
-    color: "#667085",
-  },
-
-  setValue: {
-    flex: 1,
-    height: 27,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
+  completedCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: "#D0D5DD",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  setValueText: {
-    fontSize: 9,
-    color: "#344054",
-  },
-
-  completedDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "#D0D5DD",
-  },
-
-  completedDotActive: {
+  completedCircleActive: {
     backgroundColor: "#12B76A",
+    borderColor: "#12B76A",
+  },
+
+  completedCheckmark: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontWeight: "700",
+    lineHeight: 14,
+  },
+
+  setNumber: {
+    width: 46,
+    fontSize: 11,
+    color: "#667085",
+    fontWeight: "500",
+  },
+
+  setValue: {
+    flex: 1,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+
+  setValueText: {
+    fontSize: 11,
+    color: "#146EF5",
+    fontWeight: "600",
   },
 
   editSetButton: {
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D0D5DD",
+    backgroundColor: "#146EF5",
   },
 
   editSetIcon: {
-    fontSize: 14,
+    fontSize: 13,
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+
+  noSetsText: {
+    fontSize: 11,
+    color: "#9DAFCB",
+    fontStyle: "italic",
+    paddingVertical: 8,
+    textAlign: "center",
+  },
+
+  addSetButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#DDE8F5",
+  },
+
+  addSetIcon: {
+    fontSize: 16,
     color: "#146EF5",
+    fontWeight: "700",
+    lineHeight: 18,
+  },
+
+  addSetText: {
+    fontSize: 12,
+    color: "#146EF5",
+    fontWeight: "600",
   },
 
   emptyState: {

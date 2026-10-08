@@ -15,6 +15,7 @@ import {
 import {
   SafeAreaView,
 } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   useNavigation,
@@ -147,11 +148,11 @@ export function EditSetScreen({
             navigation.goBack()
           }
         >
-          <Text
-            style={styles.backIcon}
-          >
-            ‹
-          </Text>
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color="#146EF5"
+          />
         </TouchableOpacity>
 
         <Text
